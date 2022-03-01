@@ -1,9 +1,9 @@
 {
   "manifestVersion": 1,
-  "id": "SqlReportngServices",
-  "name": "SQL Server Reporting Services Deployment",
-  "version": "1.5.3",
-  "publisher": "tobania",
+  "id": "SqlReportngServicesExt",
+  "name": "SQL Server Reporting Services Deployment (multiple lines reports file pattern)",
+  "version": "1.0.2",
+  "publisher": "SSCo-AppDev",
   "targets": [
     {
       "id": "Microsoft.VisualStudio.Services"
@@ -11,21 +11,21 @@
   ],
   "links": {
     "home": {
-      "uri": "https://www.tobania.be/"
+      "uri": "https://www.spray.com"
     },
     "support": {
-      "uri": "https://github.com/tobania/VSTS.Extension.SqlReportingServices/issues"
+      "uri": "https://dev.azure.com/itssco/WebERP/_git/common-tools-ssrs-deployment"
     },
     "repository": {
-      "uri": "https://github.com/tobania/VSTS.Extension.SqlReportingServices"
+      "uri": "https://dev.azure.com/itssco/WebERP/_git/common-tools-ssrs-deployment"
     },
     "issues": {
-      "uri": "https://github.com/tobania/VSTS.Extension.SqlReportingServices/issues"
+      "uri": "https://dev.azure.com/itssco/WebERP/_git/common-tools-ssrs-deployment"
     }
   },
   "description": "Contains a task for deploying Report Files to SQL Server Reporting Services",
   "categories": [
-    "Build and release"
+    "Azure Pipelines"
   ],
   "icons": {
     "default": "icon.png"
@@ -36,28 +36,17 @@
     }
   },
   "files": [
-    { "path": "SqlReportingServicesDeployment" },
-    { "path": "SqlReportingServicesFolderDeployment" }
+    { "path": "SqlReportingServicesDeploymentExt" }
   ],
   "contributions": [
     {
-      "id": "SqlReportingServicesDeployment",
+      "id": "SqlReportingServicesDeploymentExt",
       "type": "ms.vss-distributed-task.task",
       "targets": [
         "ms.vss-distributed-task.tasks"
       ],
       "properties": {
-        "name": "SqlReportingServicesDeployment"
-      }
-    },
-    {
-      "id": "SqlReportingServicesFolderDeployment",
-      "type": "ms.vss-distributed-task.task",
-      "targets": [
-        "ms.vss-distributed-task.tasks"
-      ],
-      "properties": {
-        "name": "SqlReportingServicesFolderDeployment"
+        "name": "SqlReportingServicesDeploymentExt"
       }
     }
   ]

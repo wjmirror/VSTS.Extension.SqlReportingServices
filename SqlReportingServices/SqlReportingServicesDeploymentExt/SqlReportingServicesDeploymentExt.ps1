@@ -91,11 +91,19 @@ param(
 
 	Write-Host "Uploading files" -NoNewline;
 	#Get all Files using the $ReportFiles parameter (expecting it is a Wildcard or direct link to 1 file)
-	$pathIsValid = Test-Path $ReportFiles;
-	if($pathIsValid -eq $False){
-		Write-Error "No file(s) matching the path/wildcard $ReportFiles were found";#NotFound 1
-		exit -1;
+	ForEach($itemFile in @($ReportFiles.Split("`n"))){
+			Write-Warning $itemFile;
+			if([string]::IsNullOrWhiteSpace($itemFile)){
+				continue;
+			}
+
+			$pathIsValid = Test-Path $itemFile;
+			if($pathIsValid -eq $False){
+				Write-Error "No file(s) matching the path/wildcard $itemFile were found";#NotFound 1
+				exit -1;
+			}
 	}
+	
 
 	if($IncludeDataSource -eq $true){
 		$pathRdsIsValid = Test-Path $DataSourceLocalPath;
@@ -267,85 +275,94 @@ param(
 ##########################################################
 #		             Uploading reports                   #
 ##########################################################
-
-	$files = @(Get-ChildItem $ReportFiles);
-	$fileCount = $files.Length;
-	Verbose-WriteLine "Found $fileCount items in $ReportFiles";
-
-	Write-Host "Uploading $fileCount files to $WebserviceUrl ($ReportUploadRootPath)...";
-	#Itterate over all files and append them to a catalogitem
-	$files | ForEach-Object{ 
-		$reportName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name); #Get the name of the reportname
-		$bytes = [System.IO.File]::ReadAllBytes($_.FullName); #Get The path to upload
-		$byteLength = $bytes.Length; #for verbose logging 
-		Write-Host "Uploading report $reportName to $ReportUploadRootPath...";
-		Verbose-WriteLine "Uploading $reportName with filesize $byteLength bytes"; 
-		$warnings =$null; #Warnings associated to the upload
-		try{
-		$report = $ssrs.CreateCatalogItem(
-			"Report", #The Catalog Item
-			$reportName, #The report name
-			$ReportUploadRootPath,#Upload root path
-			$OverrideExisting, #Overriding files which exists
-			$bytes, #The bytes to upload
-			$null, #Additional properties to set
-			[ref]$warnings #Warnings associated to the upload
-		);
-
-		#If any warning was logged during upload, log them to the console
-		if($warnings -ne $null){
-			Write-Warning "One or more warnings occured during upload:";
-			$warningSb = New-Object System.Text.StringBuilder;
-			$warnings | ForEach-Object{
-				$txtWarning = $_.Message;
-				$warningSb.AppendLine("`t- {$txtWarning}");
-			}
-			Write-Warning $warningSb.ToString();
+	$fileTotalCount=0;
+	ForEach($itemFile in @($ReportFiles.Split("`n"))){
+		Write-Warning $itemFile;
+		if([string]::IsNullOrWhiteSpace($itemFile)){
+			continue;
 		}
+		#- loop each file path pattern
+		$files = @(Get-ChildItem $itemFile);
+		$fileCount = $files.Length; 
+		$fileTotalCount = $fileTotalCount + $fileCount;
+		Verbose-WriteLine "Found $fileCount items in $itemFile";
+
+		Write-Host "Uploading $fileCount files to $WebserviceUrl ($ReportUploadRootPath)...";
+		#Itterate over all files and append them to a catalogitem
+		$files | ForEach-Object{ 
+			$reportName = [System.IO.Path]::GetFileNameWithoutExtension($_.Name); #Get the name of the reportname
+			$bytes = [System.IO.File]::ReadAllBytes($_.FullName); #Get The path to upload
+			$byteLength = $bytes.Length; #for verbose logging 
+			Write-Host "Uploading report $reportName to $ReportUploadRootPath...";
+			Verbose-WriteLine "Uploading $reportName with filesize $byteLength bytes"; 
+			$warnings =$null; #Warnings associated to the upload
+			try{
+			$report = $ssrs.CreateCatalogItem(
+				"Report", #The Catalog Item
+				$reportName, #The report name
+				$ReportUploadRootPath,#Upload root path
+				$OverrideExisting, #Overriding files which exists
+				$bytes, #The bytes to upload
+				$null, #Additional properties to set
+				[ref]$warnings #Warnings associated to the upload
+			);
+
+			#If any warning was logged during upload, log them to the console
+			if($warnings -ne $null){
+				Write-Warning "One or more warnings occured during upload:";
+				$warningSb = New-Object System.Text.StringBuilder;
+				$warnings | ForEach-Object{
+					$txtWarning = $_.Message;
+					$warningSb.AppendLine("`t- {$txtWarning}");
+				}
+				Write-Warning $warningSb.ToString();
+			}
 		
-		if($UpdateDataSource -eq $true){ #Update the datasources
-		    Write-Host "Updating the DataSources of the report $reportName...";
+			if($UpdateDataSource -eq $true){ #Update the datasources
+				Write-Host "Updating the DataSources of the report $reportName...";
 			
-			$serverDataSources = $ssrs.ListChildren($DataSourceRootPath,$true);
-            $neededDataSources = $ssrs.GetItemDataSources($report.Path);
+				$serverDataSources = $ssrs.ListChildren($DataSourceRootPath,$true);
+				$neededDataSources = $ssrs.GetItemDataSources($report.Path);
 			
-            $neededDataSources | ForEach-Object{
-                $reportDataSourceName = $_.Name;
-				Foreach($serverDataSource in $serverDataSources){
-					if([System.String]::Compare($serverDataSource.Name.Trim(),$reportDataSourceName.Trim(),$true) -eq 0){
-                        $dataSourcePathNew = $serverDataSource.Path;
+				$neededDataSources | ForEach-Object{
+					$reportDataSourceName = $_.Name;
+					Foreach($serverDataSource in $serverDataSources){
+						if([System.String]::Compare($serverDataSource.Name.Trim(),$reportDataSourceName.Trim(),$true) -eq 0){
+							$dataSourcePathNew = $serverDataSource.Path;
 						
-                        Write-Host "Updating DataSource '$reportDataSourceName' to path '$dataSourcePathNew'..." -NoNewline;
+							Write-Host "Updating DataSource '$reportDataSourceName' to path '$dataSourcePathNew'..." -NoNewline;
                         
 
-                        $dataSourceReferenceNew = New-Object("$type.DataSourceReference");
-                        $dataSourceReferenceNew.Reference = $dataSourcePathNew;
+							$dataSourceReferenceNew = New-Object("$type.DataSourceReference");
+							$dataSourceReferenceNew.Reference = $dataSourcePathNew;
 
-                        $dataSourceNew = New-Object ("$type.DataSource");
-                        $dataSourceNew.Name =$reportDataSourceName;
-                        $dataSourceNew.Item = $dataSourceReferenceNew;
-						#[System.Collections.Generic.List[$type + ".DataSource"]]$arr = @($dataSourceNew);
-                        $ssrs.SetItemDataSources($report.Path,$dataSourceNew);
-						Write-Host "Done!";
-						break;
-                    }
-                }
-            }
-        }
+							$dataSourceNew = New-Object ("$type.DataSource");
+							$dataSourceNew.Name =$reportDataSourceName;
+							$dataSourceNew.Item = $dataSourceReferenceNew;
+							#[System.Collections.Generic.List[$type + ".DataSource"]]$arr = @($dataSourceNew);
+							$ssrs.SetItemDataSources($report.Path,$dataSourceNew);
+							Write-Host "Done!";
+							break;
+						}
+					}
+				}
+			}
 
 		
 
-		}catch [System.Exception]{
-			Write-Error $_.Exception.Message;
-			#Terminate script
-			exit -1;
-		}
+			}catch [System.Exception]{
+				Write-Error $_.Exception.Message;
+				#Terminate script
+				exit -1;
+			}
 
-	}
+		} 
+	} # end loop of each path pattern
+
 ##########################################################
 #		               Finishing task                    #
 ##########################################################
-	Write-Host "Done uploading $fileCount files!";
+	Write-Host "Done uploading $fileTotalCount files!";
 	Write-Host "Deployment of RDL files completed";
 ##########################################################
 #		                Task finished                    #

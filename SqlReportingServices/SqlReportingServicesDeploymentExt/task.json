@@ -1,9 +1,9 @@
 {
-  "id": "e99e48ac-8011-45ca-aa36-fc2cec54ecfb",
-  "name": "SqlReportingServicesDeployment",
-  "friendlyName": "SQL Server Reports Deployment",
+  "id": "a49e48ac-bc35-5bca-ce4f-fc2cd254ecea",
+  "name": "SqlReportingServicesDeploymentExt",
+  "friendlyName": "SQL Server Reports Deployment (multiple lines report file)",
   "description": "Deploys the SQL reporting files to the SQL Reporting Service",
-  "author": "Tobania",
+  "author": "SprayingSystem",
   "helpMarkDown": "Deploys the SQL reporting files to the SQL Reporting Service",
   "category": "Deploy",
   "visibility": [
@@ -11,23 +11,23 @@
   ],
   "links": {
     "home": {
-      "uri": "https://www.tobania.be/"
+      "uri": "https://www.spray.com/"
     },
     "support": {
-      "uri": "https://github.com/tobania/VSTS.Extension.EntityFrameworkMigrations/issues"
+      "uri": "https://dev.azure.com/itssco/WebERP/_git/common-tools-ssrs-deployment"
     },
     "repository": {
-      "uri": "https://github.com/tobania/VSTS.Extension.EntityFrameworkMigrations"
+      "uri": "https://dev.azure.com/itssco/WebERP/_git/common-tools-ssrs-deployment"
     },
     "issues": {
-      "uri": "https://github.com/tobania/VSTS.Extension.EntityFrameworkMigrations/issues"
+      "uri": "https://dev.azure.com/itssco/WebERP/_git/common-tools-ssrs-deployment"
     }
   },
   "demands": [],
   "version": {
     "Major": "1",
-    "Minor": "4",
-    "Patch": "3"
+    "Minor": "0",
+    "Patch": "2"
   },
   "minimumAgentVersion": "1.95.0",
   "instanceNameFormat": "Deploy SQL Server reporting files",
@@ -51,10 +51,10 @@
   "inputs": [
     {
       "name": "ReportFiles",
-      "type": "filePath",
+      "type": "multiLine",
       "label": "Local Report Path",
       "required": true,
-      "helpMarkDown": "The path to the RDL file(s). Can use Wildcards: $(System.DefaultWorkingDirectory)/**/*.rdl",
+      "helpMarkDown": "The path to the RDL file(s). Can use Wildcards: $(System.DefaultWorkingDirectory)/**/*.rdl. Each Newline is a new file pattern ",
       "groupName": "files"
     },
 
@@ -233,7 +233,7 @@
   ],
   "execution": {
     "PowerShell": {
-      "target": "$(currentDirectory)\\SqlReportingServicesDeployment.ps1",
+      "target": "$(currentDirectory)\\SqlReportingServicesDeploymentExt.ps1",
       "argumentFormat": "",
       "workingDirectory": "$(currentDirectory)"
     }
